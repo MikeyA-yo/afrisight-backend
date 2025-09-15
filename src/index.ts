@@ -1,14 +1,33 @@
 import { Hono } from 'hono'
+import mongoose from 'mongoose'
+import auth from './routes/auth'
+import { jwtMiddleware } from './middleware/auth.js'
 import { run } from './lib/genai'
 import { dataLoader } from './lib/loaddata'
 import { aiPredictiveAnalysis } from './lib/aipredictiveanalysis'
 import predict from './routes/predict'
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI!)
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 const app = new Hono()
 
 app.get('/', (c) => {
   return c.text('Hello Hono!')
 })
+
+// Public auth routes
+app.route('/auth', auth)
+
+// Protect all other routes by default
+app.use('*', jwtMiddleware)
 
 // Mount the predict routes
 app.route('/predict', predict)
