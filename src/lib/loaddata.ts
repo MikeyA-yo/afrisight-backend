@@ -2,6 +2,8 @@
 import concertData from '../data/dataconcers2011-.json';
 import spotifyAfroData from '../data/spotifyafro.json';
 import spotifyYouTubeData from '../data/spotifyyoutubedataset.json';
+import businessData from '../data/business.retailsales.json';
+import moviesData from '../data/movies.json';
 
 // Interface for Concert Data (dataconcers2011-.json)
 export interface Concert {
@@ -87,12 +89,29 @@ export interface SpotifyYouTubeTrack {
   Stream: number;
 }
 
+// Interface for Business Retail Sales Data (business.retailsales.json)
+export interface BusinessSale {
+  "Product Type": string;
+  "Net Quantity": number;
+  "Gross Sales": number;
+  "Discounts": number;
+  "Returns": number;
+  "Total Net Sales": number;
+}
+
+// Interface for Movies Data (movies.json)
+export interface Movie {
+  runtime: number;
+}
+
 // Data loader class
 export class DataLoader {
   private static instance: DataLoader;
   private concertData: ConcertData | null = null;
   private spotifyAfroData: SpotifyAfroTrack[] | null = null;
   private spotifyYouTubeData: SpotifyYouTubeTrack[] | null = null;
+  private businessData: BusinessSale[] | null = null;
+  private moviesData: Movie[] | null = null;
 
   private constructor() {}
 
@@ -162,17 +181,61 @@ export class DataLoader {
   }
 
   /**
+   * Load business retail sales data from imported JSON (limited to 500 entries)
+   */
+  public loadBusinessData(): BusinessSale[] {
+    if (this.businessData) {
+      return this.businessData;
+    }
+
+    try {
+      const rawData = businessData as BusinessSale[];
+      // Limit to 500 entries
+      this.businessData = rawData.slice(0, 500);
+      console.log(`Loaded ${this.businessData.length} business sales records (limited to 500)`);
+      return this.businessData;
+    } catch (error) {
+      console.error('Error loading business data:', error);
+      throw new Error('Failed to load business data');
+    }
+  }
+
+  /**
+   * Load movies data from imported JSON (limited to 500 entries)
+   */
+  public loadMoviesData(): Movie[] {
+    if (this.moviesData) {
+      return this.moviesData;
+    }
+
+    try {
+      const rawData = moviesData as Movie[];
+      // Limit to 500 entries
+      this.moviesData = rawData.slice(0, 500);
+      console.log(`Loaded ${this.moviesData.length} movie records (limited to 500)`);
+      return this.moviesData;
+    } catch (error) {
+      console.error('Error loading movies data:', error);
+      throw new Error('Failed to load movies data');
+    }
+  }
+
+  /**
    * Load all data sets
    */
   public loadAllData(): {
     concerts: ConcertData;
     spotifyAfro: SpotifyAfroTrack[];
     spotifyYouTube: SpotifyYouTubeTrack[];
+    business: BusinessSale[];
+    movies: Movie[];
   } {
     return {
       concerts: this.loadConcertData(),
       spotifyAfro: this.loadSpotifyAfroData(),
       spotifyYouTube: this.loadSpotifyYouTubeData(),
+      business: this.loadBusinessData(),
+      movies: this.loadMoviesData(),
     };
   }
 
@@ -183,11 +246,15 @@ export class DataLoader {
     concertPrograms: number;
     spotifyAfroTracks: number;
     spotifyYouTubeTracks: number;
+    businessRecords: number;
+    movieRecords: number;
   } {
     return {
       concertPrograms: this.concertData?.programs.length || 0,
       spotifyAfroTracks: this.spotifyAfroData?.length || 0,
       spotifyYouTubeTracks: this.spotifyYouTubeData?.length || 0,
+      businessRecords: this.businessData?.length || 0,
+      movieRecords: this.moviesData?.length || 0,
     };
   }
 
@@ -241,6 +308,156 @@ export class DataLoader {
     return this.spotifyYouTubeData
       ?.sort((a, b) => b.Views - a.Views)
       .slice(0, limit) || [];
+  }
+
+  /**
+   * Get top business sales by total net sales
+   */
+  public getTopBusinessSales(limit: number = 10): BusinessSale[] {
+    if (!this.businessData) {
+      this.loadBusinessData();
+    }
+    
+    return this.businessData
+      ?.sort((a, b) => b["Total Net Sales"] - a["Total Net Sales"])
+      .slice(0, limit) || [];
+  }
+
+  /**
+   * Search business data by product type
+   */
+  public searchBusinessByProductType(productType: string): BusinessSale[] {
+    if (!this.businessData) {
+      this.loadBusinessData();
+    }
+    
+    return this.businessData?.filter(sale => 
+      sale["Product Type"].toLowerCase().includes(productType.toLowerCase())
+    ) || [];
+  }
+
+  /**
+   * Get business sales statistics
+   */
+  public getBusinessStats(): {
+    totalRecords: number;
+    totalNetSales: number;
+    averageNetSales: number;
+    topProductType: string;
+    uniqueProductTypes: number;
+  } {
+    if (!this.businessData) {
+      this.loadBusinessData();
+    }
+
+    if (!this.businessData?.length) {
+      return {
+        totalRecords: 0,
+        totalNetSales: 0,
+        averageNetSales: 0,
+        topProductType: '',
+        uniqueProductTypes: 0
+      };
+    }
+
+    const totalNetSales = this.businessData.reduce((sum, sale) => sum + sale["Total Net Sales"], 0);
+    const averageNetSales = totalNetSales / this.businessData.length;
+    
+    // Get top product type by total sales
+    const productTypeSales = this.businessData.reduce((acc, sale) => {
+      const productType = sale["Product Type"];
+      acc[productType] = (acc[productType] || 0) + sale["Total Net Sales"];
+      return acc;
+    }, {} as Record<string, number>);
+
+    const topProductType = Object.entries(productTypeSales)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
+
+    const uniqueProductTypes = Object.keys(productTypeSales).length;
+
+    return {
+      totalRecords: this.businessData.length,
+      totalNetSales,
+      averageNetSales,
+      topProductType,
+      uniqueProductTypes
+    };
+  }
+
+  /**
+   * Get movies statistics
+   */
+  public getMoviesStats(): {
+    totalMovies: number;
+    averageRuntime: number;
+    shortestRuntime: number;
+    longestRuntime: number;
+    runtimeDistribution: {
+      short: number; // < 90 minutes
+      medium: number; // 90-120 minutes
+      long: number; // > 120 minutes
+    };
+  } {
+    if (!this.moviesData) {
+      this.loadMoviesData();
+    }
+
+    if (!this.moviesData?.length) {
+      return {
+        totalMovies: 0,
+        averageRuntime: 0,
+        shortestRuntime: 0,
+        longestRuntime: 0,
+        runtimeDistribution: { short: 0, medium: 0, long: 0 }
+      };
+    }
+
+    const runtimes = this.moviesData.map(movie => movie.runtime);
+    const totalRuntime = runtimes.reduce((sum, runtime) => sum + runtime, 0);
+    const averageRuntime = totalRuntime / runtimes.length;
+    const shortestRuntime = Math.min(...runtimes);
+    const longestRuntime = Math.max(...runtimes);
+
+    const runtimeDistribution = runtimes.reduce((acc, runtime) => {
+      if (runtime < 90) acc.short++;
+      else if (runtime <= 120) acc.medium++;
+      else acc.long++;
+      return acc;
+    }, { short: 0, medium: 0, long: 0 });
+
+    return {
+      totalMovies: this.moviesData.length,
+      averageRuntime,
+      shortestRuntime,
+      longestRuntime,
+      runtimeDistribution
+    };
+  }
+
+  /**
+   * Get movies by runtime range
+   */
+  public getMoviesByRuntimeRange(minRuntime: number = 0, maxRuntime: number = 500): Movie[] {
+    if (!this.moviesData) {
+      this.loadMoviesData();
+    }
+    
+    return this.moviesData?.filter(movie => 
+      movie.runtime >= minRuntime && movie.runtime <= maxRuntime
+    ) || [];
+  }
+
+  /**
+   * Get business sales by net sales range
+   */
+  public getBusinessSalesByRange(minSales: number = 0, maxSales: number = 50000): BusinessSale[] {
+    if (!this.businessData) {
+      this.loadBusinessData();
+    }
+    
+    return this.businessData?.filter(sale => 
+      sale["Total Net Sales"] >= minSales && sale["Total Net Sales"] <= maxSales
+    ) || [];
   }
 }
 
