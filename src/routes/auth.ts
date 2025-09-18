@@ -23,9 +23,9 @@ auth.post("/signup", async (c) => {
     return c.json({ token });
   } catch (e) {
     if (e instanceof Error) {
-      return c.json({ error: { message: e.message } }, 400);
+      return c.json({ error: e.message }, 400);
     } else {
-      return c.json({ error: { message: "Error creating user" } }, 400);
+      return c.json({ error: "Error creating user" }, 400);
     }
   }
 });
