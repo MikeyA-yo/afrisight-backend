@@ -898,7 +898,8 @@ Reference specific data points, trends, or examples when relevant. If the user a
 
 For ${userCreatorType} creators specifically, focus on actionable insights relevant to their creator type while providing comprehensive, cross-industry perspectives.
 
-Keep responses conversational, insightful, and backed by data. Remember the conversation context and build upon previous discussions.
+Keep responses conversational, insightful, and concise not to lengthy. Remember the conversation context and build upon previous discussions.
+Feel free to search using external data sources for more information.
 `;
 
     console.log(`💬 Generating comprehensive AI chat response for ${userCreatorType} creator ${userId}, session ${currentSessionId}`);
