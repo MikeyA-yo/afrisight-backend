@@ -7,6 +7,7 @@ import { dataLoader } from './lib/loaddata'
 import { aiPredictiveAnalysis } from './lib/aipredictiveanalysis'
 import predict from './routes/predict'
 import explore from './routes/explore'
+import settings from './routes/settings'
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI!)
@@ -29,6 +30,9 @@ app.route('/auth', auth)
 
 // Protect all other routes by default
 app.use('*', jwtMiddleware)
+
+// Mount the settings routes
+app.route('/settings', settings)
 
 // Mount the explore routes
 app.route('/explore', explore)

@@ -711,7 +711,193 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   }
   ```
 
-### 🤖 Direct AI Interaction
+### ⚙️ User Settings Endpoints
+
+#### Get User Profile
+- **GET** `/settings/profile`
+  
+  Get current user's profile information.
+
+  **Response:**
+  ```json
+  {
+    "success": true,
+    "profile": {
+      "id": "670a1234567890abcdef1234",
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "creatorType": "Musician"
+    }
+  }
+  ```
+
+  **Error Response (401):**
+  ```json
+  {
+    "success": false,
+    "error": "User authentication required"
+  }
+  ```
+
+  **Error Response (404):**
+  ```json
+  {
+    "success": false,
+    "error": "User not found"
+  }
+  ```
+
+#### Update User Profile
+- **PUT** `/settings/profile`
+  
+  Update user's profile information. All fields are optional - provide only the fields you want to update.
+
+  **Request Body:**
+  ```json
+  {
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "creatorType": "Producer"
+  }
+  ```
+
+  **Partial Update Example:**
+  ```json
+  {
+    "name": "New Name Only"
+  }
+  ```
+
+  **Success Response:**
+  ```json
+  {
+    "success": true,
+    "message": "Profile updated successfully",
+    "profile": {
+      "id": "670a1234567890abcdef1234",
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com",
+      "creatorType": "Producer"
+    },
+    "updatedFields": ["name", "email", "creatorType"]
+  }
+  ```
+
+  **Validation Error (400):**
+  ```json
+  {
+    "success": false,
+    "error": "Invalid creatorType. Must be one of: Content Creator, Musician, Producer, Event Planner, Other"
+  }
+  ```
+
+  **Email Conflict Error (400):**
+  ```json
+  {
+    "success": false,
+    "error": "Email already exists"
+  }
+  ```
+
+  **Invalid Email Format (400):**
+  ```json
+  {
+    "success": false,
+    "error": "Invalid email format"
+  }
+  ```
+
+#### Change Password
+- **PUT** `/settings/password`
+  
+  Change user's password with current password verification.
+
+  **Request Body:**
+  ```json
+  {
+    "currentPassword": "oldpassword123",
+    "newPassword": "newpassword456"
+  }
+  ```
+
+  **Success Response:**
+  ```json
+  {
+    "success": true,
+    "message": "Password changed successfully"
+  }
+  ```
+
+  **Invalid Current Password (400):**
+  ```json
+  {
+    "success": false,
+    "error": "Current password is incorrect"
+  }
+  ```
+
+  **Weak Password Error (400):**
+  ```json
+  {
+    "success": false,
+    "error": "New password must be at least 6 characters long"
+  }
+  ```
+
+  **Same Password Error (400):**
+  ```json
+  {
+    "success": false,
+    "error": "New password must be different from current password"
+  }
+  ```
+
+#### Delete Account
+- **DELETE** `/settings/account`
+  
+  Delete user account permanently. Requires password confirmation and explicit deletion confirmation.
+
+  **Request Body:**
+  ```json
+  {
+    "password": "userpassword123",
+    "confirmDeletion": "DELETE_MY_ACCOUNT"
+  }
+  ```
+
+  **Success Response:**
+  ```json
+  {
+    "success": true,
+    "message": "Account deleted successfully"
+  }
+  ```
+
+  **Invalid Password (400):**
+  ```json
+  {
+    "success": false,
+    "error": "Password is incorrect"
+  }
+  ```
+
+  **Invalid Confirmation (400):**
+  ```json
+  {
+    "success": false,
+    "error": "confirmDeletion must be exactly \"DELETE_MY_ACCOUNT\""
+  }
+  ```
+
+  **Missing Fields (400):**
+  ```json
+  {
+    "success": false,
+    "error": "Password and confirmDeletion are required"
+  }
+  ```
+
+## 🤖 Direct AI Interaction
 
 #### AI Prompt Endpoint
 - **POST** `/ai/prompt`
