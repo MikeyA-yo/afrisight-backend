@@ -826,81 +826,53 @@ predict.post('/chat', async (c) => {
 
     // Build comprehensive prompt with all creator data
     const contextualPrompt = `
-AFRISIGHT COMPREHENSIVE CREATOR AI ASSISTANT
+  AFRISIGHT CREATOR AI ASSISTANT
 
-USER PROFILE: ${userCreatorType.toUpperCase()} CREATOR
+  USER TYPE: ${userCreatorType.toUpperCase()}
+  CONVERSATION HISTORY:
+  ${conversationHistory}
 
-CONVERSATION HISTORY:
-${conversationHistory}
+  DATA OVERVIEW:
+  Music:
+  - Concerts: ${stats.concertPrograms}
+  - Spotify Afro Tracks: ${stats.spotifyAfroTracks}
+  - YouTube Videos: ${stats.spotifyYouTubeTracks}
+  Top Tracks:
+  ${topAfroTracks.slice(0, 3).map((track, i) => 
+    `${i + 1}. "${track.name}" by ${track.artist} (Popularity: ${track.popularity}, Energy: ${track.energy})`
+  ).join('\n')}
+  Top YouTube:
+  ${topYouTubeTracks.slice(0, 3).map((track, i) => 
+    `${i + 1}. "${track.Track}" by ${track.Artist} (Views: ${track.Views.toLocaleString()})`
+  ).join('\n')}
 
-COMPREHENSIVE CREATOR ECOSYSTEM DATA:
+  Business:
+  - Cases: ${businessStats.totalRecords}
+  - Market Value: $${businessStats.totalNetSales.toLocaleString()}
+  - Top Category: ${businessStats.topProductType}
+  Top Performers:
+  ${topBusinessSales.slice(0, 3).map((business, i) => 
+    `${i + 1}. ${business["Product Type"]} ($${business["Total Net Sales"].toLocaleString()})`
+  ).join('\n')}
 
-MUSIC INDUSTRY DATA:
-- Total Concert Programs: ${stats.concertPrograms}
-- Spotify Afro Tracks: ${stats.spotifyAfroTracks}
-- YouTube Music Videos: ${stats.spotifyYouTubeTracks}
+  Content:
+  - Pieces: ${movieStats.totalMovies}
+  - Avg Length: ${movieStats.averageRuntime.toFixed(1)} min
+  - Short: ${movieStats.runtimeDistribution.short}, Medium: ${movieStats.runtimeDistribution.medium}, Long: ${movieStats.runtimeDistribution.long}
 
-TOP PERFORMING MUSIC:
-${topAfroTracks.slice(0, 5).map((track, i) => 
-  `${i + 1}. "${track.name}" by ${track.artist} - Popularity: ${track.popularity}, Energy: ${track.energy}`
-).join('\n')}
+  CROSS-INDUSTRY INSIGHTS:
+  - Music: High-energy tracks trend
+  - Business: Category success varies
+  - Content: ${movieStats.runtimeDistribution.short > movieStats.runtimeDistribution.medium ? 'Short-form dominates' : 'Medium-form preferred'}
 
-TOP YOUTUBE VIDEOS:
-${topYouTubeTracks.slice(0, 5).map((track, i) => 
-  `${i + 1}. "${track.Track}" by ${track.Artist} - Views: ${track.Views.toLocaleString()}, Likes: ${track.Likes.toLocaleString()}`
-).join('\n')}
+  SYSTEM CAPABILITIES:
+  - Music, business, content, and cross-industry insights
+  - Trend analysis, recommendations, and strategies
 
-BUSINESS & ENTREPRENEURSHIP DATA:
-- Total Business Cases: ${businessStats.totalRecords}
-- Total Market Value: $${businessStats.totalNetSales.toLocaleString()}
-- Average Business Performance: $${businessStats.averageNetSales.toFixed(2)}
-- Top Performing Category: ${businessStats.topProductType}
-- Unique Business Categories: ${businessStats.uniqueProductTypes}
+  USER QUESTION: ${prompt}
 
-TOP BUSINESS PERFORMERS:
-${topBusinessSales.map((business, i) => 
-  `${i + 1}. ${business["Product Type"]} - Net Sales: $${business["Total Net Sales"].toLocaleString()}`
-).join('\n')}
-
-CONTENT CREATION DATA:
-- Total Content Pieces: ${movieStats.totalMovies}
-- Average Content Length: ${movieStats.averageRuntime.toFixed(1)} minutes
-- Short-form Content (<90min): ${movieStats.runtimeDistribution.short} pieces (${((movieStats.runtimeDistribution.short / movieStats.totalMovies) * 100).toFixed(1)}%)
-- Medium-form Content (90-120min): ${movieStats.runtimeDistribution.medium} pieces (${((movieStats.runtimeDistribution.medium / movieStats.totalMovies) * 100).toFixed(1)}%)
-- Long-form Content (>120min): ${movieStats.runtimeDistribution.long} pieces (${((movieStats.runtimeDistribution.long / movieStats.totalMovies) * 100).toFixed(1)}%)
-
-CROSS-INDUSTRY INSIGHTS:
-- Music: High-energy, danceable tracks perform best
-- Business: Success varies significantly across categories
-- Content: ${movieStats.runtimeDistribution.short > movieStats.runtimeDistribution.medium ? 'Short-form content dominates' : 'Medium-form content preferred'}
-
-SYSTEM CAPABILITIES:
-- Music trend analysis and predictions
-- Artist performance insights and recommendations
-- Business market analysis and entrepreneurship guidance
-- Content creation strategy and optimization
-- Cross-industry collaboration opportunities
-- Platform-specific growth strategies
-- Monetization strategies across all creator verticals
-- Data-driven insights for music, business, and content creation
-- Multi-platform creator ecosystem analysis
-
-USER QUESTION: ${prompt}
-
-As AfriSight's comprehensive creator AI assistant, provide helpful, data-driven insights that leverage ALL available data sources. Your expertise spans:
-
-🎵 MUSIC: Streaming trends, artist development, live events, audio features
-💼 BUSINESS: Market analysis, product strategies, sales optimization, entrepreneurship
-🎬 CONTENT: Video creation, platform optimization, audience engagement, content length strategies
-🌐 CROSS-INDUSTRY: Multi-platform growth, collaboration opportunities, monetization across verticals
-
-Reference specific data points, trends, or examples when relevant. If the user asks about predictions or analysis, offer to generate detailed reports using the available specialized endpoints.
-
-For ${userCreatorType} creators specifically, focus on actionable insights relevant to their creator type while providing comprehensive, cross-industry perspectives.
-
-Keep responses conversational, insightful, and concise not to lengthy. Remember the conversation context and build upon previous discussions.
-Feel free to search using external data sources for more information.
-`;
+  Provide concise, actionable, data-driven insights for ${userCreatorType} creators. Reference relevant data and trends. Build on previous conversation context. Offer endpoint suggestions for deeper analysis if needed.
+  `;
 
     console.log(`💬 Generating comprehensive AI chat response for ${userCreatorType} creator ${userId}, session ${currentSessionId}`);
 
