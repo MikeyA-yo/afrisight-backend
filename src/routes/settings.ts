@@ -37,7 +37,11 @@ settings.get('/profile', async (c) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        creatorType: user.creatorType
+        creatorType: user.creatorType,
+        age: user.age || null,
+        bio: user.bio || null,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       }
     });
 
@@ -67,13 +71,13 @@ settings.put('/profile', async (c) => {
       }, 401);
     }
 
-    const { name, email, creatorType } = await c.req.json();
+    const { name, email, creatorType, age, bio } = await c.req.json();
 
-    // Validate input
-    if (!name && !email && !creatorType) {
+    // Validate input - at least one field must be provided
+    if (!name && !email && !creatorType && age === undefined && bio === undefined) {
       return c.json({
         success: false,
-        error: 'At least one field (name, email, creatorType) must be provided'
+        error: 'At least one field (name, email, creatorType, age, bio) must be provided'
       }, 400);
     }
 
@@ -92,6 +96,32 @@ settings.put('/profile', async (c) => {
         return c.json({
           success: false,
           error: 'Invalid email format'
+        }, 400);
+      }
+    }
+
+    // Validate age if provided
+    if (age !== undefined) {
+      if (typeof age !== 'number' || age < 13 || age > 120) {
+        return c.json({
+          success: false,
+          error: 'Age must be a number between 13 and 120'
+        }, 400);
+      }
+    }
+
+    // Validate bio if provided
+    if (bio !== undefined && bio !== null) {
+      if (typeof bio !== 'string') {
+        return c.json({
+          success: false,
+          error: 'Bio must be a string'
+        }, 400);
+      }
+      if (bio.length > 500) {
+        return c.json({
+          success: false,
+          error: 'Bio must be 500 characters or less'
         }, 400);
       }
     }
@@ -121,6 +151,11 @@ settings.put('/profile', async (c) => {
     if (name) updateData.name = name.trim();
     if (email) updateData.email = email.toLowerCase().trim();
     if (creatorType) updateData.creatorType = creatorType;
+    if (age !== undefined) updateData.age = age;
+    if (bio !== undefined) {
+      // Allow clearing bio by setting to empty string or null
+      updateData.bio = bio === null ? null : bio.trim();
+    }
 
     // Update user
     const updatedUser = await User.findByIdAndUpdate(
@@ -136,7 +171,11 @@ settings.put('/profile', async (c) => {
         id: updatedUser!._id,
         name: updatedUser!.name,
         email: updatedUser!.email,
-        creatorType: updatedUser!.creatorType
+        creatorType: updatedUser!.creatorType,
+        age: updatedUser!.age || null,
+        bio: updatedUser!.bio || null,
+        createdAt: updatedUser!.createdAt,
+        updatedAt: updatedUser!.updatedAt
       },
       updatedFields: Object.keys(updateData)
     });
@@ -149,6 +188,15 @@ settings.put('/profile', async (c) => {
       return c.json({
         success: false,
         error: 'Email already exists'
+      }, 400);
+    }
+
+    // Handle MongoDB validation errors
+    if (error instanceof Error && error.message.includes('validation failed')) {
+      return c.json({
+        success: false,
+        error: 'Validation error',
+        details: error.message
       }, 400);
     }
 

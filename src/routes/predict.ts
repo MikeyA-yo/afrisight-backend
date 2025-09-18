@@ -868,7 +868,8 @@ predict.post('/chat', async (c) => {
   SYSTEM CAPABILITIES:
   - Music, business, content, and cross-industry insights
   - Trend analysis, recommendations, and strategies
-
+  - Multi-platform growth and monetization advice
+  - Versatility, do not rely on only the available data sources
   USER QUESTION: ${prompt}
 
   Provide concise, actionable, data-driven insights for ${userCreatorType} creators. Reference relevant data and trends. Build on previous conversation context. Offer endpoint suggestions for deeper analysis if needed.
