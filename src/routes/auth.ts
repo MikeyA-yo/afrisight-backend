@@ -22,7 +22,11 @@ auth.post("/signup", async (c) => {
     const token = await signJwt({ userId: user._id, email: user.email, name: user.name, creatorType: user.creatorType });
     return c.json({ token });
   } catch (e) {
-    return c.json({ error: "Email already exists" }, 400);
+    if (e instanceof Error) {
+      return c.json({ error: { message: e.message } }, 400);
+    } else {
+      return c.json({ error: { message: "Error creating user" } }, 400);
+    }
   }
 });
 
