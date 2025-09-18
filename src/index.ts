@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import mongoose from 'mongoose'
 import auth from './routes/auth'
 import { jwtMiddleware } from './middleware/auth.js'
@@ -21,7 +22,7 @@ mongoose.connect(process.env.MONGODB_URI!)
   });
 
 const app = new Hono()
-
+app.use(cors())
 app.get('/', (c) => {
   return c.text('Hello Hono!')
 })
