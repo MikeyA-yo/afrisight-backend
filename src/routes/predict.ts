@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { aiPredictiveAnalysis } from '../lib/aipredictiveanalysis';
 import { dataLoader } from '../lib/loaddata';
+import { run } from '../lib/genai';
 
 const predict = new Hono();
 
@@ -315,6 +316,297 @@ predict.get('/quick-stats', (c) => {
     return c.json({
       success: false,
       error: 'Failed to get prediction statistics',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
+interface ChatSession {
+  id: string;
+  userId: string;
+  messages: ChatMessage[];
+  createdAt: Date;
+  lastActivity: Date;
+}
+
+// In-memory chat storage (in production, use Redis or database)
+const chatSessions = new Map<string, ChatSession>();
+
+/**
+ * POST /predict/chat
+ * Interactive AI chat with memory and music data context
+ */
+predict.post('/chat', async (c) => {
+  try {
+    const { prompt, sessionId } = await c.req.json();
+    
+    if (!prompt || typeof prompt !== 'string') {
+      return c.json({
+        success: false,
+        error: 'Prompt is required and must be a string'
+      }, 400);
+    }
+
+    // Get user info from JWT
+    const jwtPayload = c.get('jwtPayload');
+    const userId = jwtPayload?.userId;
+
+    if (!userId) {
+      return c.json({
+        success: false,
+        error: 'User authentication required'
+      }, 401);
+    }
+
+    // Generate or use existing session ID
+    const currentSessionId = sessionId || `chat_${userId}_${Date.now()}`;
+    
+    // Get or create chat session
+    let session = chatSessions.get(currentSessionId);
+    if (!session) {
+      session = {
+        id: currentSessionId,
+        userId: userId,
+        messages: [],
+        createdAt: new Date(),
+        lastActivity: new Date()
+      };
+      chatSessions.set(currentSessionId, session);
+    }
+
+    // Update last activity
+    session.lastActivity = new Date();
+
+    // Add user message to session
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: prompt,
+      timestamp: new Date()
+    };
+    session.messages.push(userMessage);
+
+    // Prepare context data
+    const stats = dataLoader.getDataStats();
+    const topAfroTracks = dataLoader.getTopAfroTracks(10);
+    const topYouTubeTracks = dataLoader.getTopYouTubeTracks(10);
+
+    // Build conversation history for context
+    const conversationHistory = session.messages
+      .slice(-10) // Keep last 10 messages for context
+      .map(msg => `${msg.role}: ${msg.content}`)
+      .join('\n');
+
+    // Build comprehensive prompt with context
+    const contextualPrompt = `
+AFRISIGHT MUSIC AI ASSISTANT
+
+CONVERSATION HISTORY:
+${conversationHistory}
+
+AVAILABLE MUSIC DATA CONTEXT:
+- Total Concert Programs: ${stats.concertPrograms}
+- Spotify Afro Tracks: ${stats.spotifyAfroTracks}
+- YouTube Music Videos: ${stats.spotifyYouTubeTracks}
+
+TOP PERFORMING AFRO TRACKS:
+${topAfroTracks.slice(0, 5).map((track, i) => 
+  `${i + 1}. "${track.name}" by ${track.artist} - Popularity: ${track.popularity}, Energy: ${track.energy}`
+).join('\n')}
+
+TOP YOUTUBE MUSIC VIDEOS:
+${topYouTubeTracks.slice(0, 5).map((track, i) => 
+  `${i + 1}. "${track.Track}" by ${track.Artist} - Views: ${track.Views.toLocaleString()}, Likes: ${track.Likes.toLocaleString()}`
+).join('\n')}
+
+SYSTEM CAPABILITIES:
+- Music trend analysis and predictions
+- Artist performance insights
+- Genre analysis and recommendations
+- Concert and event trend forecasting
+- Marketing and collaboration suggestions
+- Audio feature analysis (energy, danceability, tempo)
+
+USER QUESTION: ${prompt}
+
+As AfriSight's AI music analyst, provide helpful, data-driven insights based on the available music data. Reference specific tracks, artists, or trends when relevant. If the user asks about predictions or analysis, offer to generate detailed reports using the available endpoints.
+
+Keep responses conversational but informative, and remember the conversation context.
+`;
+
+    console.log(`💬 Generating AI chat response for user ${userId}, session ${currentSessionId}`);
+
+    // Generate AI response
+    const aiResponse = await run(contextualPrompt);
+
+    // Add AI response to session
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: aiResponse,
+      timestamp: new Date()
+    };
+    session.messages.push(assistantMessage);
+
+    // Clean up old sessions (keep last 100 per user)
+    const userSessions = Array.from(chatSessions.entries())
+      .filter(([_, s]) => s.userId === userId)
+      .sort((a, b) => b[1].lastActivity.getTime() - a[1].lastActivity.getTime());
+
+    if (userSessions.length > 100) {
+      userSessions.slice(100).forEach(([sessionId]) => {
+        chatSessions.delete(sessionId);
+      });
+    }
+
+    return c.json({
+      success: true,
+      sessionId: currentSessionId,
+      message: aiResponse,
+      conversation: {
+        messageCount: session.messages.length,
+        sessionStarted: session.createdAt,
+        lastActivity: session.lastActivity
+      },
+      context: {
+        dataPointsAvailable: stats.concertPrograms + stats.spotifyAfroTracks + stats.spotifyYouTubeTracks,
+        topArtistsReferenced: [...new Set([...topAfroTracks.slice(0, 5).map(t => t.artist), ...topYouTubeTracks.slice(0, 5).map(t => t.Artist)])]
+      },
+      suggestions: [
+        "Ask me about trending artists or genres",
+        "Request a detailed trend analysis",
+        "Get insights about specific artists",
+        "Explore collaboration opportunities",
+        "Analyze audio features and market trends"
+      ]
+    });
+
+  } catch (error) {
+    console.error('❌ Chat error:', error);
+    return c.json({
+      success: false,
+      error: 'Failed to process chat message',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * GET /predict/chat/history
+ * Get chat history for current user
+ */
+predict.get('/chat/history', async (c) => {
+  try {
+    const jwtPayload = c.get('jwtPayload');
+    const userId = jwtPayload?.userId;
+
+    if (!userId) {
+      return c.json({
+        success: false,
+        error: 'User authentication required'
+      }, 401);
+    }
+
+    const sessionId = c.req.query('sessionId');
+    const limit = Math.min(parseInt(c.req.query('limit') || '50'), 100);
+
+    if (sessionId) {
+      // Get specific session
+      const session = chatSessions.get(sessionId);
+      if (!session || session.userId !== userId) {
+        return c.json({
+          success: false,
+          error: 'Session not found or access denied'
+        }, 404);
+      }
+
+      return c.json({
+        success: true,
+        sessionId,
+        messages: session.messages.slice(-limit),
+        sessionInfo: {
+          messageCount: session.messages.length,
+          createdAt: session.createdAt,
+          lastActivity: session.lastActivity
+        }
+      });
+    } else {
+      // Get all user sessions
+      const userSessions = Array.from(chatSessions.entries())
+        .filter(([_, session]) => session.userId === userId)
+        .sort((a, b) => b[1].lastActivity.getTime() - a[1].lastActivity.getTime())
+        .slice(0, 20); // Return last 20 sessions
+
+      return c.json({
+        success: true,
+        sessions: userSessions.map(([sessionId, session]) => ({
+          sessionId,
+          messageCount: session.messages.length,
+          lastMessage: session.messages[session.messages.length - 1]?.content.substring(0, 100) + '...',
+          createdAt: session.createdAt,
+          lastActivity: session.lastActivity
+        }))
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Chat history error:', error);
+    return c.json({
+      success: false,
+      error: 'Failed to get chat history',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * DELETE /predict/chat/session
+ * Delete a chat session
+ */
+predict.delete('/chat/session', async (c) => {
+  try {
+    const { sessionId } = await c.req.json();
+    const jwtPayload = c.get('jwtPayload');
+    const userId = jwtPayload?.userId;
+
+    if (!userId) {
+      return c.json({
+        success: false,
+        error: 'User authentication required'
+      }, 401);
+    }
+
+    if (!sessionId) {
+      return c.json({
+        success: false,
+        error: 'Session ID is required'
+      }, 400);
+    }
+
+    const session = chatSessions.get(sessionId);
+    if (!session || session.userId !== userId) {
+      return c.json({
+        success: false,
+        error: 'Session not found or access denied'
+      }, 404);
+    }
+
+    chatSessions.delete(sessionId);
+
+    return c.json({
+      success: true,
+      message: 'Chat session deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Delete chat session error:', error);
+    return c.json({
+      success: false,
+      error: 'Failed to delete chat session',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
   }

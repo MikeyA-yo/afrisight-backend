@@ -6,6 +6,7 @@ import { run } from './lib/genai'
 import { dataLoader } from './lib/loaddata'
 import { aiPredictiveAnalysis } from './lib/aipredictiveanalysis'
 import predict from './routes/predict'
+import explore from './routes/explore'
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI!)
@@ -28,6 +29,9 @@ app.route('/auth', auth)
 
 // Protect all other routes by default
 app.use('*', jwtMiddleware)
+
+// Mount the explore routes
+app.route('/explore', explore)
 
 // Mount the predict routes
 app.route('/predict', predict)
@@ -199,12 +203,12 @@ app.post('/ai/prompt', async (c) => {
 // Configure Bun server with increased timeout for AI operations
 Bun.serve({
   fetch: app.fetch,
-  port: 3000,
+  port: Bun.env.PORT || 5000,
   idleTimeout: 255, 
   development: process.env.NODE_ENV !== 'production',
 })
 
-console.log('🚀 AfriSight Backend server running on http://localhost:3000')
+console.log(`🚀 AfriSight Backend server running on http://localhost:${Bun.env.PORT || 5000}`)
 console.log('⚡ AI-powered music analytics ready!')
 
 export default app
