@@ -431,10 +431,12 @@ SYSTEM CAPABILITIES:
 - Concert and event trend forecasting
 - Marketing and collaboration suggestions
 - Audio feature analysis (energy, danceability, tempo)
+- Data-driven insights based on music industry trends
+- Should also be able to make recommendations for creators that are not musicians
 
 USER QUESTION: ${prompt}
 
-As AfriSight's AI music analyst, provide helpful, data-driven insights based on the available music data. Reference specific tracks, artists, or trends when relevant. If the user asks about predictions or analysis, offer to generate detailed reports using the available endpoints.
+As AfriSight's AI music analyst, provide helpful, data-driven insights based on the available music data and also any data you have access to. Reference specific tracks, artists, or trends when relevant. If the user asks about predictions or analysis, offer to generate detailed reports using the available endpoints.
 
 Keep responses conversational but informative, and remember the conversation context.
 `;
