@@ -8,6 +8,7 @@ import { aiPredictiveAnalysis } from './lib/aipredictiveanalysis'
 import predict from './routes/predict'
 import explore from './routes/explore'
 import settings from './routes/settings'
+import events from './routes/events'
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI!)
@@ -39,6 +40,9 @@ app.route('/explore', explore)
 
 // Mount the predict routes
 app.route('/predict', predict)
+
+// Mount the events routes
+app.route('/events', events)
 
 // Data endpoints
 app.get('/api/data/stats', (c) => {

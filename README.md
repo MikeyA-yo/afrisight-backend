@@ -897,6 +897,274 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   }
   ```
 
+### 🎫 Event Discovery Endpoints
+
+#### Scrape All Events
+- **GET** `/events/scrape`
+  
+  Scrape events from both Tix.Africa and Luma platforms simultaneously.
+
+  **Response:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "tixEvents": [
+        {
+          "name": "Afrobeats Night Lagos",
+          "price": "₦5,000",
+          "location": "Lagos, Nigeria", 
+          "imageUrl": "https://tix.africa/images/event123.jpg",
+          "eventUrl": "https://tix.africa/events/afrobeats-night-lagos",
+          "date": "Dec 25, 2025",
+          "source": "tix"
+        }
+      ],
+      "lumaEvents": [
+        {
+          "name": "Music Tech Meetup",
+          "price": "Check Event Page",
+          "location": "Victoria Island, Lagos",
+          "imageUrl": "https://images.luma.com/event456.jpg", 
+          "eventUrl": "https://luma.com/events/music-tech-meetup",
+          "date": "Tomorrow at 6:00 PM",
+          "source": "luma"
+        }
+      ],
+      "totalEvents": 45,
+      "combinedEvents": [
+        // All events from both platforms combined
+      ]
+    },
+    "summary": {
+      "tixEventsCount": 25,
+      "lumaEventsCount": 20,
+      "totalEventsCount": 45,
+      "scrapedAt": "2025-09-18T10:30:00.000Z"
+    }
+  }
+  ```
+
+  **Error Response (500):**
+  ```json
+  {
+    "success": false,
+    "error": "Failed to scrape events",
+    "details": "Network timeout or parsing error"
+  }
+  ```
+
+#### Scrape Tix.Africa Events
+- **GET** `/events/tix`
+  
+  Scrape events exclusively from Tix.Africa platform.
+
+  **Response:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "events": [
+        {
+          "name": "Davido Live in Concert",
+          "price": "₦15,000",
+          "location": "Eko Convention Centre, Lagos",
+          "imageUrl": "https://tix.africa/images/davido-concert.jpg",
+          "eventUrl": "https://tix.africa/events/davido-live-concert",
+          "date": "Dec 31, 2025",
+          "source": "tix"
+        },
+        {
+          "name": "Amapiano Festival",
+          "price": "₦8,500",
+          "location": "Federal Palace Hotel, Lagos",
+          "imageUrl": "https://tix.africa/images/amapiano-fest.jpg",
+          "eventUrl": "https://tix.africa/events/amapiano-festival",
+          "date": "Jan 15, 2026",
+          "source": "tix"
+        }
+      ],
+      "count": 25,
+      "source": "tix.africa",
+      "scrapedAt": "2025-09-18T10:30:00.000Z"
+    }
+  }
+  ```
+
+#### Scrape Luma Events
+- **GET** `/events/luma`
+  
+  Scrape events exclusively from Luma platform.
+
+  **Response:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "events": [
+        {
+          "name": "African Music Industry Networking",
+          "price": "Check Event Page",
+          "location": "Ikoyi, Lagos",
+          "imageUrl": "https://images.luma.com/music-networking.jpg",
+          "eventUrl": "https://luma.com/events/african-music-networking",
+          "date": "Next Friday at 7:00 PM",
+          "source": "luma"
+        },
+        {
+          "name": "Beat Making Workshop",
+          "price": "Check Event Page", 
+          "location": "Surulere, Lagos",
+          "imageUrl": "https://images.luma.com/beat-workshop.jpg",
+          "eventUrl": "https://luma.com/events/beat-making-workshop",
+          "date": "Dec 20, 2025 at 3:00 PM",
+          "source": "luma"
+        }
+      ],
+      "count": 20,
+      "source": "luma.com",
+      "scrapedAt": "2025-09-18T10:30:00.000Z"
+    }
+  }
+  ```
+
+#### Get Lagos Events
+- **GET** `/events/lagos`
+  
+  Get events specifically located in Lagos from both platforms.
+
+  **Response:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "events": [
+        {
+          "name": "Lagos Music Festival",
+          "price": "₦12,000",
+          "location": "Tafawa Balewa Square, Lagos",
+          "imageUrl": "https://tix.africa/images/lagos-festival.jpg",
+          "eventUrl": "https://tix.africa/events/lagos-music-festival",
+          "date": "Dec 28, 2025",
+          "source": "tix"
+        }
+      ],
+      "count": 18,
+      "totalScraped": 45,
+      "location": "Lagos",
+      "scrapedAt": "2025-09-18T10:30:00.000Z"
+    }
+  }
+  ```
+
+#### Get Free Events
+- **GET** `/events/free`
+  
+  Get free events from both platforms.
+
+  **Response:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "events": [
+        {
+          "name": "Open Mic Night",
+          "price": "Free",
+          "location": "Terra Kulture, Lagos",
+          "imageUrl": "https://tix.africa/images/open-mic.jpg",
+          "eventUrl": "https://tix.africa/events/open-mic-night",
+          "date": "Every Thursday",
+          "source": "tix"
+        },
+        {
+          "name": "Music Tech Talks",
+          "price": "Check Event Page",
+          "location": "Lagos Tech Hub",
+          "imageUrl": "https://images.luma.com/tech-talks.jpg",
+          "eventUrl": "https://luma.com/events/music-tech-talks",
+          "date": "Monthly",
+          "source": "luma"
+        }
+      ],
+      "count": 8,
+      "totalScraped": 45,
+      "filter": "free",
+      "scrapedAt": "2025-09-18T10:30:00.000Z"
+    }
+  }
+  ```
+
+#### Search Events
+- **GET** `/events/search`
+  
+  Search events by keyword in event names.
+
+  **Query Parameters:**
+  - `q` (required) - Search keyword
+
+  **Example Request:**
+  ```bash
+  GET /events/search?q=afrobeats
+  ```
+
+  **Response:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "events": [
+        {
+          "name": "Afrobeats Night Lagos",
+          "price": "₦5,000",
+          "location": "Lagos, Nigeria",
+          "imageUrl": "https://tix.africa/images/afrobeats-night.jpg",
+          "eventUrl": "https://tix.africa/events/afrobeats-night-lagos",
+          "date": "Dec 25, 2025",
+          "source": "tix"
+        },
+        {
+          "name": "Pure Afrobeats Party",
+          "price": "₦3,500",
+          "location": "Ikeja, Lagos",
+          "imageUrl": "https://tix.africa/images/pure-afrobeats.jpg",
+          "eventUrl": "https://tix.africa/events/pure-afrobeats-party",
+          "date": "Jan 1, 2026",
+          "source": "tix"
+        }
+      ],
+      "count": 5,
+      "totalScraped": 45,
+      "searchKeyword": "afrobeats",
+      "scrapedAt": "2025-09-18T10:30:00.000Z"
+    }
+  }
+  ```
+
+  **Missing Keyword Error (400):**
+  ```json
+  {
+    "success": false,
+    "error": "Search keyword (q) is required"
+  }
+  ```
+
+#### Event Data Structure
+
+Each scraped event contains the following fields:
+
+```json
+{
+  "name": "Event Name",           // Event title/name
+  "price": "₦5,000 | Free",      // Ticket price (Nigerian Naira for Tix, varies for Luma)
+  "location": "City, State",     // Event location/venue
+  "imageUrl": "https://...",     // Event poster/image URL
+  "eventUrl": "https://...",     // Direct link to event page
+  "date": "Dec 25, 2025",       // Event date/time
+  "source": "tix | luma"        // Platform source (tix.africa or luma.com)
+}
+```
+
 ## 🤖 Direct AI Interaction
 
 #### AI Prompt Endpoint
