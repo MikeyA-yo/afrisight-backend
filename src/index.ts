@@ -211,12 +211,12 @@ app.post('/ai/prompt', async (c) => {
 // Configure Bun server with increased timeout for AI operations
 Bun.serve({
   fetch: app.fetch,
-  port: Bun.env.PORT || 5000,
+  port:  5050,
   idleTimeout: 255, 
   development: process.env.NODE_ENV !== 'production',
 })
 
-console.log(`🚀 AfriSight Backend server running on http://localhost:${Bun.env.PORT || 5000}`)
+console.log(`🚀 AfriSight Backend server running on http://localhost:${5050}`)
 console.log('⚡ AI-powered music analytics ready!')
 
 export default app
